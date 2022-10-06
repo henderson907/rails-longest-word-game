@@ -26,7 +26,7 @@ class GamesController < ApplicationController
   def word_in_grid(word, letters)
     word_array = word.upcase.chars
     valid = word_array.all? { |letter| letters.include?(letter) }
-    valid == false ? false : true
+    return valid
   end
 
   def word_is_valid(word)
