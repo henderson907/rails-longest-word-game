@@ -1,38 +1,30 @@
-require 'open-uri'
-require 'json'
+require "open-uri"
 
 class GamesController < ApplicationController
+  VOWELS = %w(A E I O U Y)
+
   def new
-    @letters = (0...10).map { (65 + rand(26)).chr }
+    @letters = Array.new(5) { VOWELS.sample }
+    @letters += Array.new(5) { (('A'..'Z').to_a - VOWELS).sample }
+    @letters.shuffle!
   end
 
   def score
-    @word = params[:word]
-    @letters = params[:letters]
-    valid_letters = word_in_grid(@word, @letters)
-    valid_word = word_is_valid(@word)
-
-    if valid_letters == false
-      @score = "Sorry but #{@word} cannot be built out of #{@letters}"
-    elsif valid_letters == true && valid_word == false
-      @score = "Sorry but #{@word} does not appear to be a valid english word"
-    else
-      @score = "Congratulations! #{@word} is a valid English word!"
-    end
+    @letters = params[:letters].split
+    @word = (params[:word] || "").upcase
+    @included = included?(@word, @letters)
+    @english_word = english_word?(@word)
   end
 
   private
 
-  def word_in_grid(word, letters)
-    word_array = word.upcase.chars
-    valid = word_array.all? { |letter| letters.include?(letter) }
-    return valid
+  def included?(word, letters)
+    word.chars.all? { |letter| word.count(letter) <= letters.count(letter) }
   end
 
-  def word_is_valid(word)
-    url = "https://wagon-dictionary.herokuapp.com/#{word}"
-    serialised_dictionary = URI.open(url).read
-    dictionary_verification = JSON.parse(serialised_dictionary)
-    return dictionary_verification
+  def english_word?(word)
+    response = URI.open("https://dictionary.lewagon.com/#{word}")
+    json = JSON.parse(response.read)
+    json['found']
   end
 end
